@@ -1,12 +1,10 @@
 import React from 'react';
 import { Jumbotron } from 'reactstrap';
 
-export default class Header extends React.Component {
+const Header = props => 
+    <Jumbotron>
+        <h1>{props.title}</h1>
+        <h3>{props.subtitle}</h3>
+    </Jumbotron>
 
-    render() {
-        return <Jumbotron>
-            <h1>{this.props.title}</h1>
-            <h3>{this.props.subtitle}</h3>
-        </Jumbotron>
-    }
-}
+export default Header;
