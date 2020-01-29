@@ -9,7 +9,8 @@ const QuestionnaireTable = ({ qs }) =>
             qs.map(questionnaire => 
                 <QuestionnaireTableElement 
                     key={ questionnaire.id } 
-                    questionnaire={ questionnaire } />
+                    questionnaire={ questionnaire }>
+                </QuestionnaireTableElement>
             ) 
         }
         </tbody>
