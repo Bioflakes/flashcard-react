@@ -6,11 +6,13 @@ import Header from './Header'
 import QuestionnaireContainer from '../questionnaire/QuestionnaireContainer'
 import Footer from './Footer'
 
+const serverURL = "http://localhost:8080/flashcard-mvc/questionnaires";
+
 const App = props => 
 
     <Container>
         <Header title='Flashcard Client with React' subtitle='Version 1' />
-        <QuestionnaireContainer serverURL={ "http://localhost:8080/flashcard-mvc/questionnaires" }/>
+        <QuestionnaireContainer serverURL={ serverURL }/>
         <Footer message='@ The FHNW Team'/>
     </Container>
 
