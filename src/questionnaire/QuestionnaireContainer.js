@@ -2,96 +2,84 @@ import React, { useState, useEffect } from 'react'
 import _ from 'lodash'
 import QuestionnaireTable from './QuestionnaireTable'
 import QuestionnaireCreateDialog from './QuestionnaireCreateDialog'
+import doFetch from '../network/NetworkUtil'
+import Message from '../app/Message'
+import Loader from '../app/Loader'
 
-const ID = 'id'
-const DEFAULT_ID = 0
+const headers = { headers: { 'Content-Type': 'application/json; charset=utf-8' } }
 
-const QuestionnaireContainer = ({serverURL}) => {
+/**
+ * Die Questionnaire Funktionalität (Crerate, Tabelle der Questionnaires).
+ * 
+ * @param {string} serverUrl Die URL des Backends
+ */
+const QuestionnaireContainer = ({ serverURL }) => {
 
     let [qs, setQuestionnaires] = useState([])
+    const [error, setError] = useState(false)
+    const [message, setMessage] = useState('')
+    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        fetch(serverURL)
-        .then(res => res.json())
-        .then(setQuestionnaires)
-        .catch(error => console.error(error))
-    }, [])
+    const readAll = () => {
+        doFetch({
+            url: serverURL,
+            dataFn: setQuestionnaires,
+            errorFn: setError,
+            messageFn: setMessage,
+            loadingFn: setLoading,
+            errorText: 'Not Found'
+        })
+    }
 
-    const id = qs => 
-        _.get(_.maxBy(qs, ID), ID, DEFAULT_ID) + 1
-
-    /*
-    const create = questionnaire => 
-       setQuestionnaires( _.concat(qs, { id: id(qs), ...questionnaire }))
-       */
+    useEffect(readAll, [])
 
     const create = async questionnaire => {
-        const request = await fetch(serverURL, {
-            method: 'POST',
-            headers: new Headers({
-                'Content-Type': 'application/json; charset=utf-8'
-            }),
-            body: JSON.stringify(questionnaire)
-        });
-
-        if(request.ok) {
-            questionnaire = await request.json()
-            setQuestionnaires(_.concat(qs, questionnaire))
-        }
-        else {
-            console.log(`Request nicht erfolgreich. Status: ${ request.status }`)
-        }
+        doFetch({
+            url: serverURL,
+            requestObject: { method: 'POST', body: JSON.stringify(questionnaire), ...headers },
+            dataFn: questionnaire => setQuestionnaires( _.concat(qs, questionnaire)),
+            errorFn: setError,
+            messageFn: setMessage,
+            loadingFn: setLoading,
+            errorText: 'Creation failed.'
+        })
     }
 
-
-    /*
-    const update = questionnaire =>
-        setQuestionnaires(_.map(qs, q => q.id === questionnaire.id ? questionnaire : q))
-    */
-
-    const update = async questionnaire => {
-        fetch(`${serverURL}/${questionnaire.id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify(questionnaire)
+    const update = questionnaire => {
+        doFetch({
+            url: `${ serverURL }/${ questionnaire.id }`,
+            requestObject: { method: 'PUT', body: JSON.stringify(questionnaire), ...headers },
+            dataFn: questionnaire => setQuestionnaires(_.map(qs, q => q.id === questionnaire.id ? questionnaire : q)),
+            errorFn: setError,
+            messageFn: setMessage,
+            loadingFn: setLoading,
+            errorText: 'Not found, or update failed.'
         })
-        .then(response => {
-            if (response.ok) {
-                return response.json()
-            }
-            throw new Error('Network response was not ok.');
-        })
-        .then(questionnaire => setQuestionnaires(_.map(qs, q => q.id === questionnaire.id ? questionnaire : q)))
-        .catch(error => console.error(error))
     }
 
-    /*
-    const _delete = id =>
-        setQuestionnaires( _.reject(qs, { id: id }))
-        */
-
-        
     const _delete = id => {
-        fetch(`${serverURL}/${id}`, {
-            method: 'DELETE'
+        doFetch({
+            url: `${ serverURL }/${ id }`,
+            requestObject: { method: 'DELETE' },
+            dataFn: () =>  setQuestionnaires( _.reject(qs, { id: id })),
+            errorFn: setError,
+            messageFn: setMessage,
+            loadingFn: setLoading,
+            errorText: 'Not found, or delete failed.'
         })
-        .then(response => {
-            if (response.ok) {
-                setQuestionnaires( _.reject(qs, { id: id }))
-            }
-            else {
-                throw new Error('Network response was not ok.');
-            }
-        })
-        .catch(error => console.error(error))
     }
+
+    const renderMessage = () => 
+        error ? <Message message={ message } /> : null
+
+    const renderQuestionnaireTable = (qs, update, _delete) => 
+        loading ? <Loader /> : <QuestionnaireTable qs={ qs } update={ update } _delete={ _delete } />
 
     return <div>
             <QuestionnaireCreateDialog create={ create } />
             <h3>Questionnaires</h3>
-            <QuestionnaireTable qs={ qs } update={ update } _delete={ _delete } />
+            { renderMessage() }
+            { renderQuestionnaireTable(qs, update, _delete) }
         </div>
 }
 
